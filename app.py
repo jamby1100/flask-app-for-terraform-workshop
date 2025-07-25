@@ -26,18 +26,20 @@ table = dynamodb.Table(table_name)
 @app.route('/products', methods=['POST'])
 def create_product():
     try:
-        data = request.get_json()
-        
-        # Validate required fields
+        # Accept both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+
         required_fields = ['product_name', 'price', 'brand_name', 'quantity_available']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
-        
-        # Create product item
+
         product_id = str(uuid.uuid4())
         timestamp = datetime.now().isoformat()
-        
+
         item = {
             'product_id': product_id,
             'product_name': data['product_name'],
@@ -46,15 +48,14 @@ def create_product():
             'quantity_available': int(data['quantity_available']),
             'created_at': timestamp
         }
-        
-        # Save to DynamoDB
+
         table.put_item(Item=item)
-        
+
         return jsonify({
             'message': 'Product created successfully',
             'product_id': product_id
         }), 201
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -72,6 +73,32 @@ def get_products():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/form', methods=['GET'])
+def product_form():
+    return '''
+    <html>
+        <head><title>Create Product</title></head>
+        <body>
+            <h1>Create a Product</h1>
+            <form action="/products" method="post">
+                <label>Product Name:</label><br>
+                <input type="text" name="product_name" required><br><br>
+
+                <label>Price:</label><br>
+                <input type="number" step="0.01" name="price" required><br><br>
+
+                <label>Brand Name:</label><br>
+                <input type="text" name="brand_name" required><br><br>
+
+                <label>Quantity Available:</label><br>
+                <input type="number" name="quantity_available" required><br><br>
+
+                <input type="submit" value="Create Product">
+            </form>
+        </body>
+    </html>
+    '''
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
