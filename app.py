@@ -18,7 +18,7 @@ app.json_encoder = DecimalEncoder
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
-table = dynamodb.Table('products-072025')
+table = dynamodb.Table('teamaki-products')
 
 @app.route('/products', methods=['POST'])
 def create_product():
